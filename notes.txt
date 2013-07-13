@@ -1,0 +1,29 @@
+add a block.
+update all neighboring points (could be clever, but for now, enh.)
+for each point:
+  query its 8 neighbors.
+  for each empty neighbor, compute full AO factor for octant. Otherwise, octant factor is 0.
+  for each non-empty neighbor:
+    for each of three faces at this point:
+	  add up the 4 octant AO factors in the direction of the face normal
+	  update vertex color of appropriate face vertex
+
+cubeGeometry.updateVertexAO(octant (Vector3), normal (Vector3? channel?), newAO)
+
+
+
+0--1
+| /|
+|/ |
+2--3
+
+current: 64x64x64 cells
+ - 65x65x65 points
+ - 24 verts per cell (could potentially share each vert with 4 cells)
+ - well-packed: 8 bytes per vert (3 pos, 2 uv, 1 norm, 2 misc.)
+ - 48 MB vertex buffer, 6M vertices. Guess you can't just render
+   everything!
+ - with geometry shaders, make that 3 bytes + 12 bytes + 5 bytes per cell.
+
+current plan: move AoCubeGeometry into voxelgrid, and put one in every
+cell. 16x16x4 cells = 24.5K verts
