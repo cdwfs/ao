@@ -1,4 +1,5 @@
 var container;
+var stats;
 var scene, camera, renderer;
 var cameraControls, effectController;
 var clock = new THREE.Clock();
@@ -169,6 +170,12 @@ var init = function() {
   container = document.getElementById( 'webgl_container' );
   container.appendChild( renderer.domElement );
 
+  // STATS
+  stats = new Stats();
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.top = '50px';
+  container.appendChild( stats.domElement );
+
 	// CAMERA
 	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 0.1, 1000.0 );
 	camera.position.set( -2,-2,-2 );
@@ -205,6 +212,7 @@ var animate = function() {
   window.requestAnimationFrame(animate);
   dirLight.position.copy(cameraControls.object.position)
   render();
+  stats.update()
 };
 
 init();
