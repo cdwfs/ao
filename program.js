@@ -157,6 +157,16 @@ var applyAndUpdate = function() {
   updateCubeAo(testCube);
 };
 
+function onWindowResize( event ) {
+
+
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
 var init = function() {
 	var canvasWidth = window.innerWidth;
 	var canvasHeight = window.innerHeight;
@@ -194,6 +204,10 @@ var init = function() {
   gui.add(this, 'factor1', 0, 15).onChange(applyAndUpdate);
   gui.add(this, 'factor2', 0, 15).onChange(applyAndUpdate);
   gui.add(this, 'factor3', 0, 15).onChange(applyAndUpdate);
+
+  onWindowResize();
+
+  window.addEventListener( 'resize', onWindowResize, false );
 };
 
 var render = function() {
