@@ -131,18 +131,21 @@ var createVoxelGrid = function(sizeX, sizeY, sizeZ) {
       return null;
     }
     return m_cells[z*sizeX*sizeY + y*sizeX + x];
-  }
+  };
   var m_clear = function() {
     m_cells.length = sizeX*sizeY*sizeZ;
-    for(z=0; z<sizeZ; z += 1) {
-      for(y=0; y<sizeY; y += 1) {
-        for(x=0; x<sizeX; x += 1) {
-          m_setCell(x,y,z,false);
+    for(var cz=0; cz<sizeZ; cz += 1) {
+      for(var cy=0; cy<sizeY; cy += 1) {
+        for(var cx=0; cx<sizeX; cx += 1) {
+          m_setCell(cx,cy,cz,false);
         }
       }
     }
   };
 
+  // Offsets from a given vertex (at [0,0,0]) to cells which should be considered for
+  // visibility testing in a particular octant. Each cell's visibility corresponds to
+  // a bit in the bitmask used to index into m_aoFactors[].
   var m_cellOffsets = [
     {x:0,y:0,z:1},
     {x:0,y:1,z:0},
@@ -178,23 +181,7 @@ var createVoxelGrid = function(sizeX, sizeY, sizeZ) {
     }
     return m_aoFactors[bitMask];
   };
-  var m_getAoFactor = function(vx,vy,vz) {
-    var octants = [
-      {x: 1, y: 1, z: 1},
-      {x:-1, y: 1, z: 1},
-      {x: 1, y:-1, z: 1},
-      {x:-1, y:-1, z: 1},
-      {z: 1, y: 1, z:-1},
-      {x:-1, y: 1, z:-1},
-      {x: 1, y:-1, z:-1},
-      {z:-1, y:-1, z:-1},
-    ];
-    factor = 0.0;
-    for(var iOct=0; iOct<octants.length; iOct += 1) {
-      factor += m_getAoFactorForOctant(vx,vy,vz,
-        octants[iOct].x, octants[iOct].y, octants[iOct].z);
     }
-    return factor / 8.0;
   };
 
   m_clear();
@@ -205,7 +192,6 @@ var createVoxelGrid = function(sizeX, sizeY, sizeZ) {
     sizeZ: function() { return sizeZ; },
     setCell: m_setCell,
     getCell: m_getCell,
-    getAoFactor: m_getAoFactor,
   };
 };
 
@@ -213,7 +199,7 @@ var voxels = createVoxelGrid(4,4,4);
 voxels.setCell(1,1,1,true);
 voxels.getCell(1,1,1);
 try {
-  console.log("[2,2,2] factor is: " + voxels.getAoFactor(2,3,2));
+  //console.log("[2,2,2] factor is: " + voxels.getAoFactor(2,3,2));
 } catch(e) {
   window.alert(e.message);
 }
