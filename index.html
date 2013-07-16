@@ -29,6 +29,32 @@
     <script type="text/javascript" src="dat.gui.min.js"></script>
     <script type="text/javascript" src="stats.min.js"></script>
     <script type="text/javascript" src="ao.js"></script>
+    <script id="vertexShader" type="x-shader/x-vertex">
+			varying vec2 vUv;
+
+			void main()
+			{
+				vUv = uv;
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			uniform vec2 resolution;
+			uniform float time;
+
+			varying vec2 vUv;
+
+ 			uniform sampler2D texture;
+
+			void main( void ) {
+
+				vec2 position = vUv;
+
+        vec3 color = texture2D( texture, vUv ).rgb;
+        gl_FragColor = vec4(color,1.0);
+			}
+		</script>
     <script type="text/javascript" src="program.js"></script>
     <!--
     <form>

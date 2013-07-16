@@ -7,13 +7,23 @@ var cubes = [];
 var dirLight;
 var message, speed, factor;
 var testCube;
+var cubeUniforms;
 
 var fillScene = function() {
   scene = new THREE.Scene();
   //scene.fog = new THREE.Fog( 0x808080, 5, 5.5 );
 
   var aoLookupTex    = THREE.ImageUtils.loadTexture( "cube_ao_lookup.png" );
-	var aoCubeMaterial = new THREE.MeshBasicMaterial( { map: aoLookupTex } );
+  cubeUniforms = {
+    time:       { type: "f",  value: 1.0 },
+    resolution: { type: "v2", value: new THREE.Vector2() },
+    texture:    { type: "t",  value: aoLookupTex },
+  };
+  var aoCubeMaterial = new THREE.ShaderMaterial( {
+    uniforms: cubeUniforms,
+    vertexShader: document.getElementById( 'vertexShader' ).textContent,
+    fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+  } );
 
   testCube = createAoCubeGeometry();
   var cubeMat;
@@ -58,6 +68,8 @@ var applyAndUpdate = function() {
 
 function onWindowResize( event ) {
 
+  cubeUniforms.resolution.value.x = 40;//window.innerWidth;
+  cubeUniforms.resolution.value.y = 40;//window.innerHeight;
 
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -65,6 +77,7 @@ function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
+
 
 var init = function() {
 	var canvasWidth = window.innerWidth;
@@ -112,8 +125,7 @@ var init = function() {
 var render = function() {
 	var delta = clock.getDelta();
 
-  //cube.rotation.x += 0.01;
-  //cube.rotation.y += 0.02;
+  cubeUniforms.time.value += delta * 5;
 
   THREE.AxisHelper(100);
 
