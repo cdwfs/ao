@@ -1,3 +1,4 @@
+var container;
 var scene, camera, renderer;
 var cameraControls, effectController;
 var clock = new THREE.Clock();
@@ -165,7 +166,8 @@ var init = function() {
 	renderer.setSize(canvasWidth, canvasHeight);
 	renderer.setClearColor( 0x808080, 1.0 );
 
-  document.body.appendChild( renderer.domElement );
+  container = document.getElementById( 'webgl_container' );
+  container.appendChild( renderer.domElement );
 
 	// CAMERA
 	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 0.1, 1000.0 );
@@ -173,7 +175,6 @@ var init = function() {
   camera.lookAt( new THREE.Vector3(2,2,2) );
 
   cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
-  //cameraControls.addEventListener('change', render);
   cameraControls.target.set(0.5,0.5,0.5);
 
 	fillScene();
