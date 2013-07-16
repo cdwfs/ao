@@ -13,18 +13,6 @@ var fillScene = function() {
   scene = new THREE.Scene();
   //scene.fog = new THREE.Fog( 0x808080, 5, 5.5 );
 
-  var aoLookupTex    = THREE.ImageUtils.loadTexture( "cube_ao_lookup.png" );
-  cubeUniforms = {
-    time:       { type: "f",  value: 1.0 },
-    resolution: { type: "v2", value: new THREE.Vector2() },
-    texture:    { type: "t",  value: aoLookupTex },
-  };
-  var aoCubeMaterial = new THREE.ShaderMaterial( {
-    uniforms: cubeUniforms,
-    vertexShader: document.getElementById( 'vertexShader' ).textContent,
-    fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-  } );
-
   testCube = createAoCubeGeometry();
   var cubeMat;
   var x,y,z;
@@ -67,15 +55,9 @@ var applyAndUpdate = function() {
 };
 
 function onWindowResize( event ) {
-
-  cubeUniforms.resolution.value.x = 40;//window.innerWidth;
-  cubeUniforms.resolution.value.y = 40;//window.innerHeight;
-
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
   renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
 
 
@@ -95,7 +77,7 @@ var init = function() {
   // STATS
   stats = new Stats();
   stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '50px';
+  stats.domElement.style.top = '00px';
   container.appendChild( stats.domElement );
 
 	// CAMERA
@@ -124,8 +106,6 @@ var init = function() {
 
 var render = function() {
 	var delta = clock.getDelta();
-
-  cubeUniforms.time.value += delta * 5;
 
   THREE.AxisHelper(100);
 

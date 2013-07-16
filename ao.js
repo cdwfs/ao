@@ -1,3 +1,14 @@
+var aoLookupTex    = THREE.ImageUtils.loadTexture( "cube_ao_lookup.png" );
+var cubeUniforms = {
+  texture:    { type: "t",  value: aoLookupTex },
+};
+var aoCubeMaterial = new THREE.ShaderMaterial( {
+  uniforms:       cubeUniforms,
+  vertexShader:   document.getElementById( 'vertexShader' ).textContent,
+  fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+} );
+
+
 var createAoCubeGeometry = function() {
   var cubeGeom = new THREE.Geometry();
   //    +y

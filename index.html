@@ -22,13 +22,6 @@
   </style>
 
   <body>
-    <p>Hi there!</p>
-    <div id="webgl_container"></div>
-    <script type="text/javascript" src="three.min.js"></script>
-    <script type="text/javascript" src="OrbitAndPanControls.js"></script>
-    <script type="text/javascript" src="dat.gui.min.js"></script>
-    <script type="text/javascript" src="stats.min.js"></script>
-    <script type="text/javascript" src="ao.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
 			varying vec2 vUv;
 
@@ -55,6 +48,13 @@
         gl_FragColor = vec4(color,1.0);
 			}
 		</script>
+
+    <div id="webgl_container"></div>
+    <script type="text/javascript" src="three.min.js"></script>
+    <script type="text/javascript" src="OrbitAndPanControls.js"></script>
+    <script type="text/javascript" src="dat.gui.min.js"></script>
+    <script type="text/javascript" src="stats.min.js"></script>
+    <script type="text/javascript" src="ao.js"></script>
     <script type="text/javascript" src="program.js"></script>
     <!--
     <form>
