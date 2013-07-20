@@ -1,38 +1,46 @@
+"use strict";
 var container;
 var stats;
 var scene, camera, renderer;
 var cameraControls, effectController;
 var clock = new THREE.Clock();
-var cubes = [];
+var grid;
 var dirLight;
-var message, speed, factor;
-var testCube;
-var cubeUniforms;
-
 var fillScene = function() {
   scene = new THREE.Scene();
   //scene.fog = new THREE.Fog( 0x808080, 5, 5.5 );
 
-  testCube = createAoCubeGeometry();
-  var cubeMat;
+  var urCubeGeom = new THREE.CubeGeometry(1,1,1);
+  var urCubeMat = new THREE.ShaderMaterial( {
+    uniforms: {},
+    vertexShader:   document.getElementById( 'vertexShader' ).textContent,
+    fragmentShader: document.getElementById( 'solidFragmentShader' ).textContent,
+  });
   var x,y,z;
-  var cube;
-  for(z=-0; z<1; z += 1) {
-    for(y=0; y<1; y += 1) {
-      for(x=0; x<1; x += 1) {
-        cubeMat = aoCubeMaterial;
-        cube = new THREE.Mesh(testCube,cubeMat);
-        cube.position = new THREE.Vector3(x+0.5, y+0.5, z+0.5);
-        cubes.push(cube);
+  grid = new THREE.Object3D();
+  grid.cubes = [];
+  for(z=-0; z<4; z += 1) {
+    for(y=0; y<4; y += 1) {
+      for(x=0; x<4; x += 1) {
+        var geom = urCubeGeom.clone();
+        var mat  = urCubeMat.clone();
+        mat.uniforms = {
+          fillColor:    { type: "v4",  value: new THREE.Vector4(Math.random(), Math.random(), Math.random(), 1.0) },
+        };
+        var cube = new THREE.Mesh(geom,mat);
+        cube.name = "cube" +x+y+z;
+        cube.position.set(x+0.5, y+0.5, z+0.5);
+        grid.cubes.push(cube);
         scene.add(cube);
       }
     }
   }
+  scene.add(grid);
 
-  updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 1, 0, 0), 0x0);
-  updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0,-1, 0), 0x0);
-  updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0, 0,-1), 0x0);
-  updateCubeAo(testCube);
+  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 1, 0, 0), 0x0);
+  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0,-1, 0), 0x0);
+  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0, 0,-1), 0x0);
+  //updateCubeAo(testCube);
 
   dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   scene.add(dirLight);
@@ -45,21 +53,11 @@ var fillScene = function() {
   scene.add(axes);
 };
 
-var factor0 = 0xF, factor1 = 0xF, factor2 = 0xF, factor3 = 0xF;
-var applyAndUpdate = function() {
-  updateVertexAo(testCube, CubeAoOctant.nXnYnZ, new THREE.Vector3(-1, 0, 0), factor0);
-  updateVertexAo(testCube, CubeAoOctant.nXnYpZ, new THREE.Vector3(-1, 0, 0), factor1);
-  updateVertexAo(testCube, CubeAoOctant.nXpYpZ, new THREE.Vector3(-1, 0, 0), factor2);
-  updateVertexAo(testCube, CubeAoOctant.nXpYnZ, new THREE.Vector3(-1, 0, 0), factor3);
-  updateCubeAo(testCube);
-};
-
-function onWindowResize( event ) {
+var onWindowResize = function( event ) {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
-}
-
+};
 
 var init = function() {
 	var canvasWidth = window.innerWidth;
@@ -81,23 +79,20 @@ var init = function() {
   container.appendChild( stats.domElement );
 
 	// CAMERA
-	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 0.1, 1000.0 );
-	camera.position.set( -2,-2,-2 );
+	camera = new THREE.PerspectiveCamera( 45, canvasRatio, 0.1, 1000.0 );
+	camera.position.set( -5,-5,-5 );
   camera.lookAt( new THREE.Vector3(2,2,2) );
 
   cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
-  cameraControls.target.set(0.5,0.5,0.5);
+  cameraControls.target.set(2,2,2);
 
 	fillScene();
-  message = "Fap";
-  speed = 3;
-  factor = 5;
 
-  var gui = new dat.GUI();
-  gui.add(this, 'factor0', 0, 15).onChange(applyAndUpdate);
-  gui.add(this, 'factor1', 0, 15).onChange(applyAndUpdate);
-  gui.add(this, 'factor2', 0, 15).onChange(applyAndUpdate);
-  gui.add(this, 'factor3', 0, 15).onChange(applyAndUpdate);
+  //var gui = new dat.GUI();
+  //gui.add(this, 'factor0', 0, 15).onChange(applyAndUpdate);
+  //gui.add(this, 'factor1', 0, 15).onChange(applyAndUpdate);
+  //gui.add(this, 'factor2', 0, 15).onChange(applyAndUpdate);
+  //gui.add(this, 'factor3', 0, 15).onChange(applyAndUpdate);
 
   onWindowResize();
 
