@@ -32,11 +32,14 @@ void main()
 	gl_Position = projectionMatrix * mvPosition;
 }
     </script>
-		<script id="fragmentShader"      type="x-shader/x-fragment"></script>
-		<script id="solidFragmentShader" type="x-shader/x-fragment">
-uniform vec4 fillColor;
+		<script id="fragmentShader"      type="x-shader/x-fragment">
+varying vec2 vUv;
+
+uniform sampler2D texture;
+
 void main( void ) {
-  gl_FragColor = fillColor;
+  vec3 color = texture2D( texture, vUv ).rgb;
+  gl_FragColor = vec4(color,1.0);
 }
     </script>
     <script type="text/javascript" src="three.min.js"></script>

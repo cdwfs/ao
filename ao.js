@@ -1,6 +1,6 @@
 "use strict";
 
-var createAoGrid = function(sizeX, sizeY, sizeZ, defaultVal) {
+var createAoGrid = function(sizeX, sizeY, sizeZ) {
   var createArray3d = function(sizeX,sizeY, sizeZ, defaultVal) {
     var arr = [];
     for(var z=0; z<sizeZ; ++z) {
@@ -179,4 +179,3 @@ var createAoGrid = function(sizeX, sizeY, sizeZ, defaultVal) {
     update: m_updateGridAo,
   };
 };
-

@@ -1,4 +1,5 @@
 "use strict";
+
 var aoLookupTex = THREE.ImageUtils.loadTexture( "cube_ao_lookup.png" );
 var cubeUniforms = {
   texture:    { type: "t",  value: aoLookupTex },
@@ -10,6 +11,17 @@ var aoCubeMaterial = new THREE.ShaderMaterial( {
 } );
 
 var createAoCubeGeometry = function() {
+  var Octant = {
+    nXnYnZ: 0,
+    pXnYnZ: 1,
+    nXpYnZ: 2,
+    pXpYnZ: 3,
+    nXnYpZ: 4,
+    pXnYpZ: 5,
+    nXpYpZ: 6,
+    pXpYpZ: 7,
+  };
+
   var cubeGeom = new THREE.Geometry();
   //    +y
   //    2-----3
@@ -36,67 +48,120 @@ var createAoCubeGeometry = function() {
   cubeGeom.faces.push( new THREE.Face4(0,2,3,1, new THREE.Vector3( 0, 0,-1)) ); // -Z
   cubeGeom.faces.push( new THREE.Face4(4,5,7,6, new THREE.Vector3( 0, 0, 1)) ); // +Z
 
-  cubeGeom.faceAoFactors = [];
   for(var iFace=0; iFace<6; iFace += 1) {
-    cubeGeom.faceAoFactors.push( [0xF, 0xF, 0xF, 0xF] );
     cubeGeom.faceVertexUvs[0].push( [new THREE.Vector2(0,0), new THREE.Vector2(1,0), new THREE.Vector2(1,1), new THREE.Vector2(0,1)] );
   }
 
   return cubeGeom;
 };
 
-var updateVertexAo = function(cubeGeom, octant, normal, newAo) {
-  if      (octant === CubeAoOctant.nXnYnZ) { // vertex 0
-    if      (normal.x < 0) { cubeGeom.faceAoFactors[0][0] = newAo; }
-    else if (normal.y < 0) { cubeGeom.faceAoFactors[2][0] = newAo; }
-    else if (normal.z < 0) { cubeGeom.faceAoFactors[4][0] = newAo; }
+var createVoxelGrid = function(sizeX,sizeY,sizeZ) {
+  var m_urCubeGeom = createAoCubeGeometry();
+  var createArray3d = function(sizeX,sizeY, sizeZ, defaultVal) {
+    var arr = [];
+    for(var z=0; z<sizeZ; ++z) {
+      arr[z] = [];
+      for(var y=0; y<sizeY; ++y) {
+        arr[z][y] = [];
+        for(var x=0; x<sizeX; ++x) {
+          arr[z][y][x] = defaultVal;
+        }
+      }
+    }
+    return arr;
+  };
+
+  var m_grid = createArray3d(sizeX,sizeY,sizeZ,-1);
+  var m_cubes = [];
+  var m_aoGrid = createAoGrid(sizeX,sizeY,sizeZ);
+
+  var m_addCube = function(cx,cy,cz) {
+    if (m_grid[cz][cy][cx] != -1) {
+      throw {
+        name: "VoxelError",
+        message: "Voxel cell ["+cx+","+cy+","+cz+"] is already filled!"
+      };
+    }
+    m_aoGrid.setCell(cx,cy,cz,true);
+    var newCube = new THREE.Mesh(m_urCubeGeom.clone(), aoCubeMaterial);
+    newCube.position.set(cx+0.5,cy+0.5,cz+0.5);
+    m_grid[cz][cy][cx] = m_cubes.length;
+    m_cubes.push(newCube);
+    scene.add(newCube);
+    return this;
+  };
+
+  var m_removeCube = function(cx,cy,cz) {
+    if (m_grid[cz][cy][cx] == -1) {
+      throw {
+        name: "VoxelError",
+        message: "Voxel cell ["+cx+","+cy+","+cz+"] is already empty!"
+      };
+    }
+    m_aoGrid.setCell(cx,cy,cz,false);
+    var cubeIndex = m_grid[cz][cy][cx];
+    m_grid[cz][cy][cx] = -1;
+    var oldCube = m_cubes[cubeIndex];
+    m_cubes[cubeIndex] = m_cubes.pop();
+    scene.remove(oldCube);
+    return this;
+  };
+
+  var m_updateCubeAo = function(cx,cy,cz) {
+    if (m_grid[cz][cy][cx] == -1) {
+      throw {
+        name: "VoxelError",
+        message: "Voxel cell ["+cx+","+cy+","+cz+"] is already empty!"
+      };
+    }
+    var cubeGeom = m_cubes[ m_grid[cz][cy][cx] ].geometry;
+    var tx = cx+0.5, ty = cy+0.5, tz = cz+0.5;
+    var faceNormals = ["nX","pX", "nY", "pY", "nZ", "pZ"];
+    var faceAoFactors = new Array(4);
+    for(var iFace=0; iFace<6; ++iFace) {
+      // Look up AO factor at all four corners
+      var face = cubeGeom.faces[iFace];
+      var normDir = faceNormals[iFace];
+      var faceIndices = [face.a, face.b, face.c, face.d];
+      for(var iCorner=0; iCorner<4; ++iCorner) {
+        var vert = cubeGeom.vertices[faceIndices[iCorner]];
+        faceAoFactors[iCorner] = m_aoGrid.getAoFactor(tx+vert.x, ty+vert.y, tz+vert.z, normDir) * 0xF;
+      }
+      //console.log("face "+iFace+" factors: "+faceAoFactors[0]+" "+faceAoFactors[1]+" "+faceAoFactors[2]+" "+faceAoFactors[3])
+      // Combine AO factors into new UVs for this face
+      var lutX = (1/1024) + ((faceAoFactors[0] & 0xF) | ((faceAoFactors[1] & 0xF) << 4)) / 256;
+      var lutY = (1/1024) + ((faceAoFactors[3] & 0xF) | ((faceAoFactors[2] & 0xF) << 4)) / 256;
+      cubeGeom.faceVertexUvs[0][iFace][0].set( lutX+0,      1.0 - (lutY+0)       );
+      cubeGeom.faceVertexUvs[0][iFace][1].set( lutX+(1/512),1.0 - (lutY+0)       );
+      cubeGeom.faceVertexUvs[0][iFace][2].set( lutX+(1/512),1.0 - (lutY+(1/512)) );
+      cubeGeom.faceVertexUvs[0][iFace][3].set( lutX+0,      1.0 - (lutY+(1/512)) );
+    }
+    cubeGeom.uvsNeedUpdate = true;
+  };
+
+  var m_update = function() {
+    if (m_aoGrid.isDirty()) {
+      m_aoGrid.update();
+      for(var cz=0; cz<sizeZ; ++cz) {
+        for(var cy=0; cy<sizeY; ++cy) {
+          for(var cx=0; cx<sizeX; ++cx) {
+            if (m_grid[cz][cy][cx] != -1) {
+              m_updateCubeAo(cx,cy,cz);
+            }
+          }
+        }
+      }
+    }
   }
-  else if (octant === CubeAoOctant.pXnYnZ) { // vertex 1
-    if      (normal.x > 0) { cubeGeom.faceAoFactors[1][0] = newAo; }
-    else if (normal.y < 0) { cubeGeom.faceAoFactors[2][1] = newAo; }
-    else if (normal.z < 0) { cubeGeom.faceAoFactors[4][3] = newAo; }
-  }
-  else if (octant === CubeAoOctant.nXpYnZ) { // vertex 2
-    if      (normal.x < 0) { cubeGeom.faceAoFactors[0][3] = newAo; }
-    else if (normal.y > 0) { cubeGeom.faceAoFactors[3][0] = newAo; }
-    else if (normal.z < 0) { cubeGeom.faceAoFactors[4][1] = newAo; }
-  }
-  else if (octant === CubeAoOctant.pXpYnZ) { // vertex 3
-    if      (normal.x > 0) { cubeGeom.faceAoFactors[1][1] = newAo; }
-    else if (normal.y > 0) { cubeGeom.faceAoFactors[3][3] = newAo; }
-    else if (normal.z < 0) { cubeGeom.faceAoFactors[4][2] = newAo; }
-  }
-  else if (octant === CubeAoOctant.nXnYpZ) { // vertex 4
-    if      (normal.x < 0) { cubeGeom.faceAoFactors[0][1] = newAo; }
-    else if (normal.y < 0) { cubeGeom.faceAoFactors[2][3] = newAo; }
-    else if (normal.z > 0) { cubeGeom.faceAoFactors[5][0] = newAo; }
-  }
-  else if (octant === CubeAoOctant.pXnYpZ) { // vertex 5
-    if      (normal.x > 0) { cubeGeom.faceAoFactors[1][3] = newAo; }
-    else if (normal.y < 0) { cubeGeom.faceAoFactors[2][2] = newAo; }
-    else if (normal.z > 0) { cubeGeom.faceAoFactors[5][1] = newAo; }
-  }
-  else if (octant === CubeAoOctant.nXpYpZ) { // vertex 6
-    if      (normal.x < 0) { cubeGeom.faceAoFactors[0][2] = newAo; }
-    else if (normal.y > 0) { cubeGeom.faceAoFactors[3][1] = newAo; }
-    else if (normal.z > 0) { cubeGeom.faceAoFactors[5][3] = newAo; }
-  }
-  else if (octant === CubeAoOctant.pXpYpZ) { // vertex 7
-    if      (normal.x > 0) { cubeGeom.faceAoFactors[1][2] = newAo; }
-    else if (normal.y > 0) { cubeGeom.faceAoFactors[3][2] = newAo; }
-    else if (normal.z > 0) { cubeGeom.faceAoFactors[5][2] = newAo; }
-  }
-};
-var updateCubeAo = function(cubeGeom) {
-  for(var iFace=0; iFace<6; iFace += 1) {
-    var lutX = (1/1024) + ((cubeGeom.faceAoFactors[iFace][0] & 0xF) | ((cubeGeom.faceAoFactors[iFace][1] & 0xF) << 4)) / 256;
-    var lutY = (1/1024) + ((cubeGeom.faceAoFactors[iFace][3] & 0xF) | ((cubeGeom.faceAoFactors[iFace][2] & 0xF) << 4)) / 256;
-    cubeGeom.faceVertexUvs[0][iFace][0].set( lutX+0,      1.0 - (lutY+0)       );
-    cubeGeom.faceVertexUvs[0][iFace][1].set( lutX+(1/512),1.0 - (lutY+0)       );
-    cubeGeom.faceVertexUvs[0][iFace][2].set( lutX+(1/512),1.0 - (lutY+(1/512)) );
-    cubeGeom.faceVertexUvs[0][iFace][3].set( lutX+0,      1.0 - (lutY+(1/512)) );
-  }
-  cubeGeom.uvsNeedUpdate = true;
+
+  return {
+    sizeX: function() { return sizeX; },
+    sizeY: function() { return sizeY; },
+    sizeZ: function() { return sizeZ; },
+    addCube: m_addCube,
+    removeCube: m_removeCube,
+    update: m_update,
+  };
 };
 
 
@@ -105,43 +170,21 @@ var stats;
 var scene, camera, renderer;
 var cameraControls, effectController;
 var clock = new THREE.Clock();
-var grid;
+var voxelGrid;
+var cubes = [];
 var dirLight;
 var fillScene = function() {
   scene = new THREE.Scene();
   //scene.fog = new THREE.Fog( 0x808080, 5, 5.5 );
 
-  var urCubeGeom = new THREE.CubeGeometry(1,1,1);
-  var urCubeMat = new THREE.ShaderMaterial( {
-    uniforms: {},
-    vertexShader:   document.getElementById( 'vertexShader' ).textContent,
-    fragmentShader: document.getElementById( 'solidFragmentShader' ).textContent,
-  });
-  var x,y,z;
-  grid = new THREE.Object3D();
-  grid.cubes = [];
-  for(z=-0; z<4; z += 1) {
-    for(y=0; y<4; y += 1) {
-      for(x=0; x<4; x += 1) {
-        var geom = urCubeGeom.clone();
-        var mat  = urCubeMat.clone();
-        mat.uniforms = {
-          fillColor:    { type: "v4",  value: new THREE.Vector4(Math.random(), Math.random(), Math.random(), 1.0) },
-        };
-        var cube = new THREE.Mesh(geom,mat);
-        cube.name = "cube" +x+y+z;
-        cube.position.set(x+0.5, y+0.5, z+0.5);
-        grid.cubes.push(cube);
-        scene.add(cube);
-      }
-    }
-  }
-  scene.add(grid);
-
-  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 1, 0, 0), 0x0);
-  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0,-1, 0), 0x0);
-  //updateVertexAo(testCube, CubeAoOctant.pXnYnZ, new THREE.Vector3( 0, 0,-1), 0x0);
-  //updateCubeAo(testCube);
+  voxelGrid = createVoxelGrid(3,3,3);
+  voxelGrid.addCube(0,0,0)
+           .addCube(1,0,0)
+           .addCube(0,1,0)
+           .addCube(1,1,0)
+           .addCube(1,1,1)
+           .addCube(1,1,2);
+  voxelGrid.update();
 
   dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   scene.add(dirLight);
