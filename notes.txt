@@ -3,9 +3,13 @@ update all neighboring points (could be clever, but for now, enh.)
 for each point:
   query its 8 neighbors.
   for each empty neighbor, compute full AO factor for octant. Otherwise, octant factor is 0.
+  Store AO factors per vertex for each of the six axis directions (+/-X,Y,Z)
+    add up the 4 octant AO factors in the direction of the face normal
+
+External cube geometry can query the grid for the AO factor at each vertex. This separates the cube geometry / face order
+from the AO voxel grid.
   for each non-empty neighbor:
     for each of three faces at this point:
-	  add up the 4 octant AO factors in the direction of the face normal
 	  update vertex color of appropriate face vertex
 
 cubeGeometry.updateVertexAO(octant (Vector3), normal (Vector3? channel?), newAO)
