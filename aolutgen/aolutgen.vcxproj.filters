@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="boilerplate">
+      <UniqueIdentifier>{EB6BB89C-3533-41E9-863E-ADDAB15CC830}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="utils.h">
+      <Filter>boilerplate</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image_write.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="aolutgen.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="utils.cpp">
+      <Filter>boilerplate</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+</Project>

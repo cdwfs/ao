@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{7228D082-76A1-4974-8AB5-7BED2E326AC7}") = "aolutgen", "aolutgen.vcxproj", "{56DF25D9-A599-4D84-88FC-FD491A5D9481}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{56DF25D9-A599-4D84-88FC-FD491A5D9481}.Debug|Win32.ActiveCfg = Debug|Win32
+		{56DF25D9-A599-4D84-88FC-FD491A5D9481}.Debug|Win32.Build.0 = Debug|Win32
+		{56DF25D9-A599-4D84-88FC-FD491A5D9481}.Release|Win32.ActiveCfg = Release|Win32
+		{56DF25D9-A599-4D84-88FC-FD491A5D9481}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
