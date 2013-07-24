@@ -78,63 +78,60 @@ function createVoxelGrid(sizeX, sizeY, sizeZ) {
     return arr;
   }
 
-  m_grid = createArray3d(sizeX,sizeY,sizeZ,-1);
-  m_cubes = [];
-  m_aoGrid = createAoGrid(sizeX, sizeY, sizeZ);
+  m_cubes  = new THREE.Object3D();
+  scene.add(m_cubes);
+  m_grid   = createArray3d(sizeX, sizeY, sizeZ, null);
+  m_aoGrid = createAoGrid( sizeX, sizeY, sizeZ);
 
   function m_addCube(cx, cy, cz) {
     var newCube;
     if (cx < 0 || cx >= sizeX || cy < 0 || cy >= sizeY || cz < 0 || cz >= sizeZ) {
       return this; // out of bounds silently fails
     }
-    if (m_grid[cz][cy][cx] !== -1) {
+    if (m_grid[cz][cy][cx] !== null) {
       throw {
         name: "VoxelError",
         message: "Voxel cell ["+cx+","+cy+","+cz+"] is already filled!"
       };
     }
-    m_aoGrid.setCell(cx,cy,cz,true);
+    m_aoGrid.setCell(cx, cy, cz, true);
     newCube = new THREE.Mesh(m_urCubeGeom.clone(), aoCubeMaterial);
-    newCube.position.set(cx+0.5,cy+0.5,cz+0.5);
-    m_grid[cz][cy][cx] = m_cubes.length;
-    m_cubes.push(newCube);
-    scene.add(newCube);
+    newCube.position.set(cx+0.5, cy+0.5, cz+0.5);
+    m_grid[cz][cy][cx] = newCube;
+    m_cubes.add(newCube);
+    //console.log("Added cube at ["+cx+","+cy+","+cz+"]");
     return this;
   }
 
   function m_removeCube(cx, cy, cz) {
-    var cubeIndex, oldCube, lastCube;
+    var oldCube;
     if (cx < 0 || cx >= sizeX || cy < 0 || cy >= sizeY || cz < 0 || cz >= sizeZ) {
       return this; // out of bounds silently fails
     }
-    if (m_grid[cz][cy][cx] === -1) {
+    oldCube = m_grid[cz][cy][cx];
+    if (oldCube === null) {
       throw {
         name: "VoxelError",
         message: "Voxel cell ["+cx+","+cy+","+cz+"] is already empty!"
       };
     }
-    m_aoGrid.setCell(cx,cy,cz,false);
-    cubeIndex = m_grid[cz][cy][cx];
-    m_grid[cz][cy][cx] = -1;
-    oldCube = m_cubes[cubeIndex];
-    lastCube = m_cubes.pop();
-    if (oldCube !== lastCube) {
-      m_cubes[cubeIndex] = lastCube;
-    }
-    scene.remove(oldCube);
+    m_aoGrid.setCell(cx, cy, cz, false);
+    m_grid[cz][cy][cx] = null;
+    m_cubes.remove(oldCube);
+    //console.log("Removed cube at ["+cx+","+cy+","+cz+"]");
     return this;
   }
 
   function m_updateCubeAo(cx, cy, cz) {
     var cubeGeom, tx = cx+0.5, ty = cy+0.5, tz = cz+0.5, faceNormals, faceAoFactors = [],
 	  iFace, face, normDir, faceIndices, iCorner, vert, lutX, lutY;
-    if (m_grid[cz][cy][cx] === -1) {
+    if (m_grid[cz][cy][cx] === null) {
       throw {
         name: "VoxelError",
-        message: "Voxel cell ["+cx+","+cy+","+cz+"] is already empty!"
+        message: "Cannot update empty voxel cell ["+cx+","+cy+","+cz+"]!"
       };
     }
-    cubeGeom = m_cubes[ m_grid[cz][cy][cx] ].geometry;
+    cubeGeom = m_grid[cz][cy][cx].geometry;
     faceNormals = ["nX","pX", "nY", "pY", "nZ", "pZ"];
     faceAoFactors.length = 4;
     for(iFace=0; iFace<6; iFace+=1) {
@@ -165,7 +162,7 @@ function createVoxelGrid(sizeX, sizeY, sizeZ) {
       for(cz=0; cz<sizeZ; cz+=1) {
         for(cy=0; cy<sizeY; cy+=1) {
           for(cx=0; cx<sizeX; cx+=1) {
-            if (m_grid[cz][cy][cx] !== -1) {
+            if (m_grid[cz][cy][cx] !== null) {
               m_updateCubeAo(cx,cy,cz);
             }
           }
@@ -178,7 +175,7 @@ function createVoxelGrid(sizeX, sizeY, sizeZ) {
     sizeX: function() { return sizeX; },
     sizeY: function() { return sizeY; },
     sizeZ: function() { return sizeZ; },
-    cubes: m_cubes,
+    cubes: m_cubes.children,
     addCube: m_addCube,
     removeCube: m_removeCube,
     update: m_update
